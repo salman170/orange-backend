@@ -1,5 +1,6 @@
-const jwt = require("jsonwebtoken");
-const dotenv = require("dotenv"); // Import dotenv
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+// Import dotenv
 dotenv.config();
 
 const authentication = async function (req, res, next) {
@@ -39,13 +40,15 @@ const authorization = async function (req, res, next) {
           req.decoded = decoded;
           next();
         } else {
-          return res.status(401).send({ status: false, message: "unauthorized" });
+          return res
+            .status(401)
+            .send({ status: false, message: "unauthorized" });
         }
       }
     });
   } catch (error) {
     res.status(500).send({ status: false, message: err.message });
   }
-}
+};
 
-module.exports = { authentication, authorization };
+export { authentication, authorization };
