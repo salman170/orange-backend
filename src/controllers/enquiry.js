@@ -1,16 +1,31 @@
 import generalModel from "../models/generalModel.js";
 import moment from "moment";
 import "moment-timezone";
+import nodemailer from "nodemailer";
+import dotenv from "dotenv";
+dotenv.config();
 
 const general = async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   try {
     let data = req.body;
-    const { phone, name, email } = data;
-if(!name || name === "" || name === undefined || !phone || phone === "" || phone === undefined || !email || email === "" || email === undefined){
-    return res.status(400).send({ status: false, message: "data is missing" });
-}
+    let { phone, name, email, model } = data;
 
+    if (
+      !name ||
+      name === "" ||
+      name === undefined ||
+      !phone ||
+      phone === "" ||
+      phone === undefined ||
+      !email ||
+      email === "" ||
+      email === undefined
+    ) {
+      return res
+        .status(400)
+        .send({ status: false, message: "Data is missing" });
+    }
 
     moment.tz.setDefault("Asia/Kolkata");
     let dates = moment().format("YYYY-MM-DD");
@@ -18,8 +33,62 @@ if(!name || name === "" || name === undefined || !phone || phone === "" || phone
     data.date = dates;
     data.time = times;
     let savedata = await generalModel.create(data);
-    res.status(201).send({ status: true, data: savedata });
+
+    if (!model) model = "Contact us";
+
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true,
+      service: "gmail",
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_PASS,
+      },
+    });
+
+    transporter.verify(function (error, success) {
+      if (error) {
+        console.error("Error connecting to email server:", error);
+        return res
+          .status(500)
+          .send({
+            status: false,
+            message: "Failed to connect to email server",
+          });
+      }
+      console.log("Server is ready to send emails");
+    });
+
+    const mailOptions = {
+      from: process.env.GMAIL_USER,
+      to: `${process.env.GMAIL_USER}, info@orangeauto.in`,
+      subject: `Enquiry for ${model} from ${phone}`,
+      html: `<p>Hello,</p>
+<p>You received an enquiry from:</p>
+<ul>
+  <li>Name: ${name}</li>
+  <li>Phone: ${phone}</li>
+  <li>Email: ${email}</li>
+  <li>Model: ${model}</li>
+</ul>`,
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error("Error sending email:", error);
+        return res
+          .status(500)
+          .send({ status: false, message: "Failed to send email" });
+      }
+      console.log("Email sent:", info.response);
+      return res
+        .status(200)
+        .send({ status: true, message: "Email sent successfully" });
+    });
+    return res.status(200).send({ status: true, data: savedata });
   } catch (error) {
+    console.error("Server error:", error);
     res.status(500).send({ status: false, message: error.message });
   }
 };
