@@ -63,7 +63,7 @@ const general = async (req, res) => {
     const mailOptions = {
       from: process.env.GMAIL_USER,
       to: `${process.env.GMAIL_USER}, info@orangeauto.in`,
-      subject: `Enquiry for ${model} from ${phone}`,
+      subject: `${leadFrom} - Enquiry for ${model} from ${phone}`,
       html: `<p>Hello,</p>
 <p>You received an enquiry from:</p>
 <ul>
